@@ -4,7 +4,7 @@ A university group project to build a platform where clients post AI projects an
 
 ## Project status
 
-This repository currently contains the README only. The application source code, database scripts, and dependency files still need to be added by the team. Do not run `npm install` or `npm run dev` in this repository until the relevant `package.json` files have been committed by a team member.
+This repository currently contains this README and `.gitkeep` placeholder files that define each member's folders. The application source code, database scripts, and dependency files still need to be added by the team. Do not run `npm install` or `npm run dev` until the relevant `package.json` files have been added.
 
 ## Agreed technology stack
 
@@ -120,19 +120,27 @@ DB_TRUST_SERVER_CERT=true
 
 These names and values are examples and must match the actual configuration created by the team. For a named SQL Server instance, use the instance name agreed by the team instead of assuming port `1433`. `DB_TRUST_SERVER_CERT=true` is only for a local development server with a self-signed certificate. Keep `.env` out of Git: commit a placeholder `.env.example`, never your real password. If you are unsure, ask Member 1 before changing database settings.
 
-## 6. Team responsibilities
+## 6. Team responsibilities and assigned folders
 
-The repository uses feature areas so members can work in parallel against one agreed database design.
+Each member owns the feature folders listed below. Put your UI code in your `client` folder and your API code in the matching `server` folder. Keep each feature's files inside those paths so members can work in parallel against one agreed database design.
 
-| Member | Owns | Main work |
+| Member | Assigned folders | Main work |
 |---|---|---|
-| **1 — You** | Shared database and accounts | Design and create the complete database schema, keys, relationships, baseline constraints, and setup/seed scripts; build authentication and freelancer/client profile features; coordinate shared naming and integration. |
-| **2** | Skills and services | Build the AI skill/service catalogue, freelancer skill/service management, and expertise browsing or filters. |
-| **3** | Projects | Build client project posting/editing, project requirements, and project browsing/search. |
-| **4** | Proposals and tracking | Build proposal submission/review, freelancer selection, assignments, and project progress features. |
-| **5** | Payments, reviews, and reporting | Build payment and review features, admin/manager views as agreed, and project/payment reports. |
+| **1** | `database/`; `client/src/features/accounts/`; `server/src/modules/accounts/` | Design and create the complete database schema, keys, relationships, constraints, and seed scripts; build authentication and freelancer/client profile features; coordinate shared naming and integration. |
+| **2** | `client/src/features/skills-services/`; `server/src/modules/skills-services/` | Build the AI skill/service catalogue, freelancer skill/service management, and expertise browsing or filters. |
+| **3** | `client/src/features/projects/`; `server/src/modules/projects/` | Build client project posting/editing, project requirements, and project browsing/search. |
+| **4** | `client/src/features/proposals-assignments/`; `server/src/modules/proposals-assignments/` | Build proposal submission/review, freelancer selection, assignments, and project progress features. |
+| **5** | `client/src/features/payments-reviews-reports/`; `server/src/modules/payments-reviews-reports/` | Build payment and review features, admin/manager views as agreed, and project/payment reports. |
 
 Members 2–5 should tell Member 1 what queries, views, procedures, or database changes their features need before changing shared schema objects. Everyone should test their feature against the shared schema and add or update relevant tests/documentation. Agree as a team who implements each required trigger, user-defined function (UDF), stored procedure, and view so every coursework requirement is covered.
+
+### Folder ownership rules
+
+- Work only in your assigned feature folders unless the team agrees that a shared file needs to change.
+- Member 1 owns the shared database scripts in `database/` and coordinates the database schema. Do not create a separate database schema for an individual feature.
+- Shared setup files such as `client/package.json`, `server/package.json`, the application entry points, route registries, shared components, `.env.example`, and `.gitignore` affect everyone. Member 1 coordinates changes to these files; discuss a change before editing them.
+- Keep feature-specific UI, API logic, and tests with that feature. If a module needs another module's data or API, agree on the interface with that member before depending on it.
+- The folders currently contain only `.gitkeep` placeholders so Git can include them when the changes are committed. Replace the placeholder with your files when your feature work begins.
 
 ## 7. Basic Git workflow for each task
 
@@ -155,17 +163,28 @@ git diff
 
 Commit and push your branch when you are ready to share it, then open a GitHub Pull Request for review. Keep commits focused on one task and do not include `.env`, passwords, `node_modules`, or generated build output. If a teammate changes a shared table or API, coordinate with them before merging dependent work.
 
-## 8. Suggested project layout
+## 8. Repository folder layout
 
-The following layout is a proposal for the team to create. It is not present yet:
+The member-owned folders below have been created. They currently contain placeholders; the app scaffolds and feature files are still to be added.
 
 ```text
 Group_63_IMR/
-├── client/                 # React + Vite frontend
-├── server/                 # Express API
-├── database/               # schema, migrations, seed data, database notes
-├── docs/                   # ER diagram, API notes, data dictionary
-├── .gitignore
+├── client/
+│   └── src/features/
+│       ├── accounts/                    # Member 1
+│       ├── skills-services/             # Member 2
+│       ├── projects/                    # Member 3
+│       ├── proposals-assignments/       # Member 4
+│       └── payments-reviews-reports/    # Member 5
+├── server/
+│   └── src/modules/
+│       ├── accounts/                    # Member 1
+│       ├── skills-services/             # Member 2
+│       ├── projects/                    # Member 3
+│       ├── proposals-assignments/       # Member 4
+│       └── payments-reviews-reports/    # Member 5
+├── database/                            # Member 1: shared SQL scripts
+├── docs/                                # Shared diagrams and documentation
 └── README.md
 ```
 
