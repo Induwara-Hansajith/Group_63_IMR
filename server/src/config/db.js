@@ -3,14 +3,14 @@ require("dotenv").config();
 const sql = require("mssql");
 
 const config ={
-    server: process.env.DB_SERVER,
     port: Number(process.env.DB_PORT || 1433),
+    server: process.env.DB_SERVER,
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     options: {
         encrypt: process.env.DB_ENCRYPT !== "false",
-        trustServerCertificate: process.env.DB_TRUST_SERVER_CERT == "true"
+        trustServerCertificate: process.env.DB_TRUST_SERVER_CERT === "true"
     },
     pool: {
         max: 10,
@@ -21,4 +21,4 @@ const config ={
 
 const poolPromise = new sql.ConnectionPool(config).connect();
 
-module.exports = {sql, PoolPromise };
+module.exports = {sql, poolPromise };
