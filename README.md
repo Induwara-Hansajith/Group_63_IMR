@@ -4,7 +4,7 @@ A university group project to build a platform where clients post AI projects an
 
 ## Project status
 
-This repository currently contains this README and `.gitkeep` placeholder files that define each member's folders. The application source code, database scripts, and dependency files still need to be added by the team. Do not run `npm install` or `npm run dev` until the relevant `package.json` files have been added.
+The backend is in `server/` and includes an Express health route, authentication routes, and SQL Server configuration. Its dependencies and run scripts are in `server/package.json`. The database setup script is `SQL_FILE/AIFreelancerDB.sql`; it creates the `AIFreelancePlatform` database and its tables. The `client/` folder has feature placeholders, but no React/Vite app or `client/package.json` yet. Each teammate will run a local backend and database using the same schema and their own local credentials.
 
 ## Agreed technology stack
 
@@ -73,18 +73,20 @@ cd "$HOME\Documents\Group_63_IMR"
 
 ## 3. Set up SQL Server for local development
 
-1. Start **SSMS** and connect to the SQL Server instance configured on your computer. Use Windows Authentication for the initial local administrator connection, or the SQL Server login configured during installation.
-2. When Member 1 adds the database schema, open the `.sql` file from the repository's `database/` folder in SSMS and run it with **Execute** (or press **F5**). Confirm the target database in the query toolbar before executing.
-3. If a seed-data script is provided, run it after the schema script. Seed data is sample data for development; do not use real passwords or personal information.
-4. Ask Member 1 for the agreed database name, instance/port, and local application login. The Node backend will use the `mssql` package to connect; do not use the SQL Server administrator login in application code.
+Each teammate needs the SQL Server **Database Engine** on their computer; SSMS is only the management app. Use the SQL Server version agreed by the team, enable TCP/IP, and configure the local instance to listen on the port used in that teammate's `.env` (the examples below use `1433`).
 
-The actual schema file and database name have not been added to this repository yet, so these database import steps become usable once the team adds those files.
+1. Start SSMS and connect to your local instance with Windows Authentication.
+2. Open `SQL_FILE/AIFreelancerDB.sql` and execute it (press **F5**). The script creates `AIFreelancePlatform` if it does not exist, then creates the tables and initial role rows. Run it on a fresh database; it is not a migration script and should not be rerun over existing tables.
+3. Create a local SQL Server login for the app, such as `app_user`, with a password. Map it to `AIFreelancePlatform`, enable it, and grant only the roles the app needs (for the current API, `db_datareader` and `db_datawriter`). SQL logins require **SQL Server and Windows Authentication mode** (mixed mode).
+4. Keep the login password on your computer and put it in your own `server/.env`. Never use the SQL Server administrator login for the app.
+
+Each teammate has a separate local database and login. The SQL script is shared; passwords and `.env` files are not.
 
 ## 4. Install and run the application
 
-The frontend and backend will have their own `package.json` files. Once the team adds them, open **two PowerShell terminals** in VS Code.
+### Backend
 
-In the first terminal, install and start the backend (the exact folder and script names will be confirmed in the backend `package.json`):
+From the repository root, open a PowerShell terminal and run:
 
 ```powershell
 cd server
@@ -92,7 +94,20 @@ npm install
 npm run dev
 ```
 
-In the second terminal, install and start the frontend:
+Leave the terminal open while developing. The API uses port `3000` by default. Visit `http://localhost:3000/api/health`; the expected response is `{"status":"ok"}`. This endpoint confirms the API responds; it does not itself query SQL Server. A database login or connection error will appear in the backend terminal.
+
+### Frontend
+
+The `client/` folder currently has feature folders but no React app or `package.json`. Yes, the team should set up React with Vite **inside `client/`**, once, and share that scaffold through Git. Do not install React globally or in `server/`. Have the person coordinating shared setup run:
+
+```powershell
+cd client
+npm create vite@latest . -- --template react
+```
+
+If Vite asks how to handle the non-empty folder, choose the option to keep/ignore existing files; do not delete the feature placeholders. Then run `npm install` in `client/`.
+
+After the React/Vite scaffold has been added, each teammate can run it in a second terminal:
 
 ```powershell
 cd client
@@ -100,25 +115,29 @@ npm install
 npm run dev
 ```
 
-Vite normally prints a local browser address, commonly `http://localhost:5173`. Use the address printed in your terminal. The Express API's address and port will be documented when the backend is added.
-
-Do not create duplicate project scaffolds if another member has already created `client/`, `server/`, or the shared database scripts. Coordinate first and use the `package.json` scripts provided by the team.
+Use the local browser URL printed by Vite (commonly `http://localhost:5173`). The React app should call the Express API; it should never connect directly to SQL Server.
 
 ## 5. Local environment variables
 
-The backend will need local settings to connect to SQL Server. When the backend owner adds `.env.example`, copy it to `.env` and fill in the local values shown by the team. A typical configuration may look like this:
+Create `server/.env` locally and fill in your own SQL login password and a newly generated JWT secret. Example keys and non-secret settings:
 
 ```dotenv
+PORT=3000
+CLIENT_ORIGIN=http://localhost:5173
+
 DB_SERVER=localhost
 DB_PORT=1433
-DB_NAME=ai_freelance_platform
+DB_NAME=AIFreelancePlatform
 DB_USER=app_user
-DB_PASSWORD=replace_with_your_local_password
+DB_PASSWORD=your_local_sql_login_password
 DB_ENCRYPT=true
 DB_TRUST_SERVER_CERT=true
+
+JWT_SECRET=your_own_random_secret
+JWT_EXPIRES_IN=1h
 ```
 
-These names and values are examples and must match the actual configuration created by the team. For a named SQL Server instance, use the instance name agreed by the team instead of assuming port `1433`. `DB_TRUST_SERVER_CERT=true` is only for a local development server with a self-signed certificate. Keep `.env` out of Git: commit a placeholder `.env.example`, never your real password. If you are unsure, ask Member 1 before changing database settings.
+`DB_SERVER`, `DB_PORT`, and `DB_NAME` must match your local SQL Server setup. If your instance uses a different port, update `DB_PORT`. `DB_TRUST_SERVER_CERT=true` is for local development with a self-signed certificate only. Keep real `.env` files, passwords, and JWT secrets out of Git; use your own secret values and share only a redacted `.env.example`.
 
 ## 6. Team responsibilities and assigned folders
 
@@ -137,10 +156,10 @@ Members 2–5 should tell Member 1 what queries, views, procedures, or database 
 ### Folder ownership rules
 
 - Work only in your assigned feature folders unless the team agrees that a shared file needs to change.
-- Member 1 owns the shared database scripts in `database/` and coordinates the database schema. Do not create a separate database schema for an individual feature.
+- Member 1 owns the shared database script in `SQL_FILE/` and coordinates the database schema. Do not create a separate database schema for an individual feature.
 - Shared setup files such as `client/package.json`, `server/package.json`, the application entry points, route registries, shared components, `.env.example`, and `.gitignore` affect everyone. Member 1 coordinates changes to these files; discuss a change before editing them.
 - Keep feature-specific UI, API logic, and tests with that feature. If a module needs another module's data or API, agree on the interface with that member before depending on it.
-- The folders currently contain only `.gitkeep` placeholders so Git can include them when the changes are committed. Replace the placeholder with your files when your feature work begins.
+- The feature folders currently contain `.gitkeep` placeholders. Replace them with feature files when work begins. The backend's shared entry point, route registry, database config, and frontend scaffold affect everyone, so coordinate changes to those files.
 
 ## 7. Basic Git workflow for each task
 
@@ -165,7 +184,7 @@ Commit and push your branch when you are ready to share it, then open a GitHub P
 
 ## 8. Repository folder layout
 
-The member-owned folders below have been created. They currently contain placeholders; the app scaffolds and feature files are still to be added.
+The member-owned feature folders are in place. The backend runs; the React/Vite frontend scaffold still needs to be added once under `client/`.
 
 ```text
 Group_63_IMR/
@@ -177,13 +196,23 @@ Group_63_IMR/
 │       ├── proposals-assignments/       # Member 4
 │       └── payments-reviews-reports/    # Member 5
 ├── server/
-│   └── src/modules/
-│       ├── accounts/                    # Member 1
-│       ├── skills-services/             # Member 2
-│       ├── projects/                    # Member 3
-│       ├── proposals-assignments/       # Member 4
-│       └── payments-reviews-reports/    # Member 5
-├── database/                            # Member 1: shared SQL scripts
+│   ├── package.json
+│   └── src/
+│       ├── app.js
+│       ├── config/
+│       │   └── db.js
+│       ├── middleware/
+│       │   └── requireAuth.js
+│       ├── routes/
+│       │   └── auth.routes.js
+│       └── modules/                     # feature work
+│           ├── accounts/                # Member 1
+│           ├── skills-services/         # Member 2
+│           ├── projects/                # Member 3
+│           ├── proposals-assignments/   # Member 4
+│           └── payments-reviews-reports/ # Member 5
+├── SQL_FILE/
+│   └── AIFreelancerDB.sql               # shared database setup
 ├── docs/                                # Shared diagrams and documentation
 └── README.md
 ```
@@ -192,7 +221,9 @@ Group_63_IMR/
 
 - **`git`, `node`, or `npm` is not recognized:** restart PowerShell after installing; if it still fails, repair the installation or add the tool to PATH.
 - **Cannot connect to SQL Server:** check that the SQL Server service is running, TCP/IP is enabled if the Node app connects over TCP, the instance/port match the team's configuration, and your login has access to the database.
-- **`npm run dev` says the script is missing:** check that you are in the correct folder and that the package's `package.json` defines a `dev` script. The application files have not been added to this repository yet.
+- **`npm run dev` says the script is missing:** check that you are in `server/` and that `server/package.json` is present. The `client/` folder has no package script until the React/Vite scaffold is added.
+- **`Login failed for user 'app_user'`:** confirm the SQL login is enabled, its password matches `DB_PASSWORD`, it is mapped to `AIFreelancePlatform`, and SQL Server is in mixed mode.
+- **A teammate has no frontend `package.json`:** the React/Vite scaffold has not been added yet; coordinate once to create it inside `client/`, preserving the feature folders.
 - **A teammate's changes conflict with yours:** do not discard either version. Contact the owners of the affected files and resolve the conflict together before completing the merge.
 
 ## Useful official guides
