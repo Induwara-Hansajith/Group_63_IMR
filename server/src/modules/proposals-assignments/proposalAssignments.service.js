@@ -13,7 +13,7 @@ async function submitProposal({
     proposedAmount,
     currencyCode="USD",
     estimatedDays=null
-}) {
+}){
     const pool = await poolPromise;
     const freelancerRes = await pool.request()
      .input("FreelancerID", sql.BigInt, freelancerId)
@@ -58,6 +58,7 @@ async function submitProposal({
         .input("EstimatedDays", sql.Int, estimatedDays)
         .query(SQL.INSERT_PROPOSAL);
     return insertRes.recordset[0];
+}
 
     async function getProposalsByFreelancer(freelancerId){
         const pool = await poolPromise;
@@ -91,5 +92,101 @@ async function submitProposal({
 
     return result.recordset;
 }
+
+async function withdrawProposal({proposalId, freeLancerId}){
+    const pool = await poolPromise;
+    const proposalRes = await pool.request()
+        .input("ProposalID", sql.BigInt, proposalId)
+        .query(SQL.GET_PROPOSAL_WITH_PROJECT);
+    const proposal = proposalRes.recordset[0];
+    if (!proposal) {
+        throw createHttpError(404, "Proposal not found.");
+    }
+    if (Number(proposal.FreelancerID) !== Number(freeLancerId)) {
+        throw createHttpError(403, "You can only withdraw your own proposals.");
+    }
+    if (proposal.Status !== "pending") {
+        throw createHttpError(400, `Can't withdraw a proposal with the status '${proposal.ProposalStatus}'.`);
+    }
+    const updateRes = await pool.request()
+        .input("ProposalID", sql.BigInt, proposalId)
+        .input("NewStatus", sql.NVarChar(20), "withdrawn")
+        .query(SQL.UPDATE_PROPOSAL_STATUS);
+    return updateRes.recordset[0];
+}
+
+async function rejectProposal({proposalId, clientId}){
+    const pool = await poolPromise;
+    const propRes = await pool.request()
+        .input("ProposalID", sql.BigInt, proposalId)
+        .query(SQL.GET_PROPOSAL_WITH_PROJECT);
+    const proposal = proposalRes.recordset[0];
+    if (!proposal) {
+        throw createHttpError(404, "Proposal not found.");
+    }
+    if (Number(proposal.ClientID)!== Number(clientId)) {
+        throw createHttpError(403, "You can only reject proposals for your own projects.");
+    }
+    if (proposal.Status !== "pending") {
+        throw createHttpError(400, `Can't reject a proposal with the status '${proposal.ProposalStatus}'.`);
+    }
+    const updateRes = await pool.request()
+        .input("ProposalID", sql.BigInt, proposalId)
+        .input("NewStatus", sql.NVarChar(20), "rejected")
+        .query(SQL.UPDATE_PROPOSAL_STATUS);
+    return updateRes.recordset[0];
+}
+
+async function acceptProposal({proposalId, clientId}){
+    const pool = await poolPromise;
+    const proposalRes = await pool.request()
+        .input("ProposalID", sql.BigInt, proposalId)
+        .query(SQL.GET_PROPOSAL_WITH_PROJECT);
+    const proposal = proposalRes.recordset[0];
+    if (!proposal){
+        throw createHttpError(404,"Proposal not found.");
+    }
+    if (Number(proposal.ClientID) !== Number(ClientId)){
+        throw createHttpError(403,"You can only accept proposals for your own projects.");
+    }
+    if (proposal.ProposalStatus !== "pending"){
+        throw createHttpError(400,`Can't accept a proposal with the status '${proposal.ProposalStatus}'.`);
+    }
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+    try{
+        const acceptReq = new sql.Request(transaction);
+        const acceptRes = await acceptReq.input("ProposalID", sql.BigInt, proposalId)
+            .query(SQL.ACCEPT_TARGET_PROPOSAL);
+        if (acceptRes.rowsAffected[0] === 0){
+            throw createHttpError(409,"Proposal could not be accepted because its status changed.");
+        }
+        const rejectReq = new sql.Request(transaction);
+        await rejectReq
+            .input("ProjectID", sql.BigInt, proposal.ProjectID)
+            .input("ProposalID", sql.BigInt, proposalId)
+            .query(SQL.REJECT_OTHER_PROPOSALS);
+
+        const assignReq = new sql.Request(transaction);
+        const assignRes = await assignReq
+            .input("ProjectID", sql.BigInt, proposal.ProjectID)
+            .input("FreelancerID", sql.BigInt, proposal.FreelancerID)
+            .input("ProposalID", sql.BigInt, proposalId)
+            .query(SQL.INSERT_PROJECT_ASSIGNMENT);
+        
+        const projReq = new sql.Request(transaction);
+        await projReq
+            .input("ProjectID", sql.BigInt, proposal.ProjectID)
+            .input("ProjectStatus", sql.NVarChar(20), "in_progress")
+            .query(SQL.SET_PROJECT_IN_PROGRESS);
+        await transaction.commit();
+        return assignRes.recordset[0];
+    } catch (err){
+        await transaction.rollback();
+        if (err.number === 2627 || err.number === 2601){
+            throw createHttpError(409,"A freelancer has already been assigned to this project. The proposal could not be accepted.");  
+        }
+        throw err;
+    }
 
 } 
