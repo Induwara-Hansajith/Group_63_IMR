@@ -3,6 +3,8 @@ const requireAuth = require("../../middleware/requireAuth");
 const controller = require("./proposalAssignments.controller");
 const router = express.Router();
 
+router.use(requireAuth);
+
 router.post("/proposals", controller.submitProposalHandler);
 router.get("/proposals/my", controller.getMyProposalsHandler);
 router.get("/proposals/project/:projectId", controller.getProjectProposalsHandler);
