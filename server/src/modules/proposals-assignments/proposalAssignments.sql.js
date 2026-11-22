@@ -1,9 +1,9 @@
-const SQL  =  {
-     
+const SQL = {
+    // 1. Proposal submission and validation
     GET_FREELANCER_PROFILE: `
         SELECT UserID, DisplayName, AvailabilityStatus
         FROM dbo.FreelancerProfiles
-        WHERE UserID = @FreelancerID;  
+        WHERE UserID = @FreelancerID;
     `,
 
     GET_PROJECT_BY_ID: `
@@ -15,7 +15,7 @@ const SQL  =  {
     CHECK_EXISTING_PROPOSAL: `
         SELECT ProposalID, Status
         FROM dbo.Proposals
-        WHERE ProjectID = @ProjectID AND FreelancerID   =  @FreelancerID;
+        WHERE ProjectID = @ProjectID AND FreelancerID = @FreelancerID;
     `,
 
     INSERT_PROPOSAL: `
@@ -28,7 +28,7 @@ const SQL  =  {
             EstimatedDays,
             Status
         )
-        OUTPUT  INSERTED.*
+        OUTPUT INSERTED.*
         VALUES (
             @ProjectID,
             @FreelancerID,
@@ -40,7 +40,7 @@ const SQL  =  {
         );
     `,
 
-    
+    //proposal retrieval 
     GET_PROPOSALS_BY_FREELANCER: `
         SELECT
             pr.ProposalID,
@@ -53,11 +53,11 @@ const SQL  =  {
             pr.CoverLetter,
             pr.ProposedAmount,
             pr.CurrencyCode,
-            pr.EstimatedDays,  
+            pr.EstimatedDays,
             pr.Status AS ProposalStatus,
             pr.SubmittedAt
         FROM dbo.Proposals AS pr
-        INNER JOIN dbo.Projects AS p ON p.ProjectID = pr.ProjectID  
+        INNER JOIN dbo.Projects AS p ON p.ProjectID = pr.ProjectID
         INNER JOIN dbo.ClientProfiles AS cp ON cp.UserID = p.ClientID
         WHERE pr.FreelancerID = @FreelancerID
         ORDER BY pr.SubmittedAt DESC;
@@ -81,11 +81,12 @@ const SQL  =  {
             pr.Status AS ProposalStatus,
             pr.SubmittedAt
         FROM dbo.Proposals AS pr
-        INNER JOIN dbo.FreelancerProfiles AS fp ON fp.UserID =  pr.FreelancerID
-        WHERE pr.ProjectID = @ProjectID  
+        INNER JOIN dbo.FreelancerProfiles AS fp ON fp.UserID = pr.FreelancerID
+        WHERE pr.ProjectID = @ProjectID
         ORDER BY pr.SubmittedAt ASC;
     `,
-// 3. Single Proposal Lookup and Status Updates
+
+    //  Single Proposal Lookup and  Status Updates
     GET_PROPOSAL_WITH_PROJECT: `
         SELECT
             pr.ProposalID,
@@ -110,7 +111,7 @@ const SQL  =  {
         WHERE ProposalID = @ProposalID;
     `,
 
-    
+     
     ACCEPT_TARGET_PROPOSAL: `
         UPDATE dbo.Proposals
         SET Status = N'accepted'
@@ -147,3 +148,91 @@ const SQL  =  {
             UpdatedAt = SYSUTCDATETIME()
         WHERE ProjectID = @ProjectID;
     `,
+
+    // 5. Assignments & Progress Tracking
+    GET_ASSIGNMENTS_BY_USER: `
+        SELECT
+            a.AssignmentID,
+            a.ProjectID,
+            p.Title AS ProjectTitle,
+            p.Deadline AS ProjectDeadline,
+            p.Status AS ProjectStatus,
+            a.FreelancerID,
+            fp.DisplayName AS FreelancerName,
+            p.ClientID,
+            cp.OrganizationName AS ClientOrganization,
+            cp.ContactName AS ClientContactName,
+            a.ProposalID,
+            pr.ProposedAmount AS AgreedAmount,
+            pr.CurrencyCode,
+            pr.EstimatedDays,
+            a.Status AS AssignmentStatus,
+            a.AssignedAt,
+            a.StartedAt,
+            a.CompletedAt
+        FROM dbo.ProjectAssignments AS a
+        INNER JOIN dbo.Projects AS p ON p.ProjectID = a.ProjectID
+        INNER JOIN dbo.Proposals AS pr ON pr.ProposalID = a.ProposalID
+        INNER JOIN dbo.FreelancerProfiles AS fp ON fp.UserID = a.FreelancerID
+        INNER JOIN dbo.ClientProfiles AS cp ON cp.UserID = p.ClientID
+        WHERE (@Role = N'admin')
+           OR (@Role = N'freelancer' AND a.FreelancerID = @UserID)
+           OR (@Role = N'client' AND p.ClientID = @UserID)
+        ORDER BY a.AssignedAt DESC;
+    `,
+
+    GET_ASSIGNMENT_BY_ID: `
+        SELECT
+            a.AssignmentID,
+            a.ProjectID,
+            p.Title AS ProjectTitle,
+            p.Description AS ProjectDescription,
+            p.Deadline AS ProjectDeadline,
+            p.Status AS ProjectStatus,
+            a.FreelancerID,
+            fp.DisplayName AS FreelancerName,
+            fp.PortfolioURL AS FreelancerPortfolioURL,
+            p.ClientID,
+            cp.OrganizationName AS ClientOrganization,
+            cp.ContactName AS ClientContactName,
+            a.ProposalID,
+            pr.CoverLetter,
+            pr.ProposedAmount AS AgreedAmount,
+            pr.CurrencyCode,
+            pr.EstimatedDays,
+            a.Status AS AssignmentStatus,
+            a.AssignedAt,
+            a.StartedAt,
+            a.CompletedAt
+        FROM dbo.ProjectAssignments AS a
+        INNER JOIN dbo.Projects AS p ON p.ProjectID = a.ProjectID
+        INNER JOIN dbo.Proposals AS pr ON pr.ProposalID = a.ProposalID
+        INNER JOIN dbo.FreelancerProfiles AS fp ON fp.UserID = a.FreelancerID
+        INNER JOIN dbo.ClientProfiles AS cp ON cp.UserID = p.ClientID
+        WHERE a.AssignmentID = @AssignmentID;
+    `,
+
+    UPDATE_ASSIGNMENT_STATUS: `
+        UPDATE dbo.ProjectAssignments
+        SET Status = @NewStatus,
+            StartedAt = CASE
+                WHEN @NewStatus = N'in_progress' AND StartedAt IS NULL THEN SYSUTCDATETIME()
+                ELSE StartedAt
+            END,
+            CompletedAt = CASE
+                WHEN @NewStatus = N'completed' THEN SYSUTCDATETIME()
+                ELSE CompletedAt
+            END
+        OUTPUT INSERTED.*
+        WHERE AssignmentID = @AssignmentID;
+    `,
+
+    SYNC_PROJECT_STATUS_FROM_ASSIGNMENT: `
+        UPDATE dbo.Projects
+        SET Status = @ProjectStatus,
+            UpdatedAt = SYSUTCDATETIME()
+        WHERE ProjectID = @ProjectID;
+    `,
+};
+
+module.exports = SQL;
