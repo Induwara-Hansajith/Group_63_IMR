@@ -188,5 +188,32 @@ async function acceptProposal({proposalId, clientId}){
         }
         throw err;
     }
-
 } 
+
+async function getMyAssignments({userId, role}){
+    const pool = await poolPromise;
+    const result = await pool.request()
+        .input("UserID", sql.BigInt, userId)
+        .input("Role", sql.NVarChar(30), role)
+        .query(SQL.GET_ASSIGNMENTS_BY_USER);
+    return result.recordset;
+}
+
+async function getAssignmentById({assignmentId, requesterId, RequesterRole}){
+    const pool = await poolPromise;
+    const result = await pool.request()
+        .input("AssignmentID", sql.BigInt, assignmentId)
+        .query(SQL.GET_ASSIGNMENT_BY_ID);
+    const assignment = result.recordset[0];
+    if (!assignment){
+        throw createHttpError(404,"Assignment not found.");
+    }
+
+    const isFreelancer = Number(assignment.FreelancerID) === Number(requesterId);
+    const isClient = Number(assignment.ClientID) === Number(requesterId);
+    const isAdmin = requesterRole === "admin" || requesterRole === "manager";
+    if (!isFreelancer && !isClient && !isAdmin){
+        throw createHttpError(403,"You are not the owner of this assignment.");
+    }
+    return assignment;
+}
