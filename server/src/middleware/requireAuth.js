@@ -4,7 +4,7 @@ function requireAuth(req, res, next){
     const header = req.headers.authorization || "";
     const[scheme, token] = header.split(" ");
 
-    if(scheme !== "bearer" || !token){
+    if(scheme?.toLowerCase() !== "bearer" || !token){
         return res.status(401).json({message: "Sign-in-required."});
     }
 
