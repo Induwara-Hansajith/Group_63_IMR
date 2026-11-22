@@ -84,6 +84,18 @@ Each teammate has a separate local database and login. The SQL script is shared;
 
 ## 4. Install and run the application
 
+### Local ports for every teammate
+
+Use these defaults on each teammate's own computer:
+
+| Service | Port | Local address / setting |
+|---|---:|---|
+| React/Vite frontend | `5173` | `http://localhost:5173` |
+| Express API | `3000` | `http://localhost:3000` (`PORT=3000`) |
+| SQL Server Database Engine | `1433` | `localhost:1433` (`DB_PORT=1433`) |
+
+Each member can use the same port numbers because each has a separate local computer. If Vite reports that `5173` is busy, use the address it prints and set `CLIENT_ORIGIN` to that exact frontend address. If SQL Server uses a different port, set `DB_PORT` to that port. If you run two copies of a service on the same computer, give one a different port and update its URLs/settings too.
+
 ### Backend
 
 From the repository root, open a PowerShell terminal and run:
