@@ -98,3 +98,81 @@ async function getProjectProposalHandler(req, res){
         return handleError(res, err);
     }
 }
+
+async function withdrawProposalHandler(req, res) {
+    try {
+        if (req.user.role !== "freelancer") {
+            return res.status(403).json({ message: "Only freelancers can withdraw proposals." });
+        }
+
+        const proposalId = parsePositiveInt(req.params.proposalId);
+        if (!proposalId) {
+            return res.status(400).json({ message: "Invalid proposalId." });
+        }
+
+        const proposal = await service.withdrawProposal({
+            proposalId,
+            freelancerId: req.user.userid,
+        });
+
+        return res.json({
+            message: "Proposal withdrawn.",
+            proposal,
+        });
+    } catch (err) {
+        return handleError(res, err);
+    }
+}
+
+ 
+async function rejectProposalHandler(req, res) {
+    try {
+        if (req.user.role !== "client") {
+            return res.status(403).json({ message: "Only clients can reject proposals." });
+        }
+
+        const proposalId = parsePositiveInt(req.params.proposalId);
+        if (!proposalId) {
+            return res.status(400).json({ message: "Invalid proposalId." });
+        }
+
+        const proposal = await service.rejectProposal({
+            proposalId,
+            clientId: req.user.userid,
+        });
+
+        return res.json({
+            message: "Proposal rejected.",
+            proposal,
+        });
+    } catch (err) {
+        return handleError(res, err);
+    }
+}
+
+ 
+async function acceptProposalHandler(req, res) {
+    try {
+        if (req.user.role !== "client") {
+            return res.status(403).json({ message: "Only clients can accept proposals." });
+        }
+
+        const proposalId = parsePositiveInt(req.params.proposalId);
+        if (!proposalId) {
+            return res.status(400).json({ message: "Invalid proposalId." });
+        }
+
+        const assignment = await service.acceptProposal({
+            proposalId,
+            clientId: req.user.userid,
+        });
+
+        return res.status(201).json({
+            message: "Proposal accepted and project assigned.",
+            assignment,
+        });
+    } catch (err) {
+        return handleError(res, err);
+    }
+}
+
