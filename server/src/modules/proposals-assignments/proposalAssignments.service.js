@@ -199,6 +199,17 @@ async function getMyAssignments({userId, role}){
     return result.recordset;
 }
 
+async function getMyProposals({userId, role}){
+    if (role !== "freelancer"){
+        throw createHttpError(403,"Only freelancers can view their proposals.");
+    }
+    const pool = await poolPromise;
+    const result = await pool.request()
+        .input("FreelancerID", sql.BigInt, userId)
+        .query(SQL.GET_PROPOSALS_BY_FREELANCER);
+    return result.recordset;
+}
+
 async function getAssignmentById({assignmentId, requesterId, RequesterRole}){
     const pool = await poolPromise;
     const result = await pool.request()
@@ -217,3 +228,102 @@ async function getAssignmentById({assignmentId, requesterId, RequesterRole}){
     }
     return assignment;
 }
+
+async function updateAssignmentStatus({ assignmentId, newStatus, requesterId, requesterRole }) {
+    const allowedStatuses = ["assigned", "in_progress", "submitted", "completed", "cancelled"];
+    if (!allowedStatuses.includes(newStatus)) {
+        throw createHttpError(400, `Invalid assignment status '${newStatus}'.`);
+    }
+
+    const pool = await poolPromise;
+    const currentRes = await pool
+        .request()
+        .input("AssignmentID", sql.BigInt, assignmentId)
+        .query(SQL.GET_ASSIGNMENT_BY_ID);
+
+    const assignment = currentRes.recordset[0];
+    if (!assignment) {
+        throw createHttpError(404, "Project assignment not found.");
+    }
+
+    const isFreelancer = Number(assignment.FreelancerID) === Number(requesterId);
+    const isClient = Number(assignment.ClientID) === Number(requesterId);
+    const isAdmin = requesterRole === "admin";
+
+    if (!isFreelancer && !isClient && !isAdmin) {
+        throw createHttpError(403, "You are not authorized to update this assignment.");
+    }
+
+    const currentStatus = assignment.AssignmentStatus;
+    if (currentStatus === "completed" || currentStatus === "cancelled") {
+        throw createHttpError(400, `Cannot change status once assignment is '${currentStatus}'.`);
+    }
+    if (currentStatus === newStatus) {
+        throw createHttpError(400, `Assignment is already '${newStatus}'.`);
+    }
+    if (isFreelancer) {
+        const validFreelancerMove =
+            (currentStatus === "assigned" && newStatus === "in_progress") ||
+            (currentStatus === "in_progress" && newStatus === "submitted");
+
+        if (!validFreelancerMove) {
+            throw createHttpError(
+                403,
+                `Freelancers cannot transition assignment from '${currentStatus}' to '${newStatus}'.`
+            );
+        }
+    } else if (isClient) {
+        const validClientMove =
+            (currentStatus === "submitted" && newStatus === "completed") ||
+            (currentStatus === "submitted" && newStatus === "in_progress") ||
+            newStatus === "cancelled";
+
+        if (!validClientMove) {
+            throw createHttpError(
+                403,
+                `Clients cannot transition assignment from '${currentStatus}' to '${newStatus}'.`
+            );
+        }
+    } else if (isAdmin && newStatus !== "cancelled") {
+        throw createHttpError(403, "Administrators can only cancel an active assignment.");
+    }
+
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin();
+
+    try {
+        const updateReq = new sql.Request(transaction);
+        const updateRes = await updateReq
+            .input("AssignmentID", sql.BigInt, assignmentId)
+            .input("NewStatus", sql.NVarChar(20), newStatus)
+            .query(SQL.UPDATE_ASSIGNMENT_STATUS);
+
+        if (newStatus === "completed" || newStatus === "cancelled") {
+            const syncReq = new sql.Request(transaction);
+            await syncReq
+                .input("ProjectID", sql.BigInt, assignment.ProjectID)
+                .input("ProjectStatus", sql.NVarChar(20), newStatus)
+                .query(SQL.SYNC_PROJECT_STATUS_FROM_ASSIGNMENT);
+        }
+
+        await transaction.commit();
+        return updateRes.recordset[0];
+    } catch (err) {
+        await transaction.rollback();
+        throw err;
+    }
+}
+
+module.exports = {
+    submitProposal,
+    getMyProposals,
+    getProjectProposals,
+    withdrawProposal,
+    rejectProposal,
+    acceptProposal,
+    getMyAssignments,
+    getAssignmentById,
+    updateAssignmentStatus,
+    getProposalsByFreelancer,
+
+};
