@@ -85,3 +85,65 @@ const SQL  =  {
         WHERE pr.ProjectID = @ProjectID  
         ORDER BY pr.SubmittedAt ASC;
     `,
+// 3. Single Proposal Lookup and Status Updates
+    GET_PROPOSAL_WITH_PROJECT: `
+        SELECT
+            pr.ProposalID,
+            pr.ProjectID,
+            pr.FreelancerID,
+            pr.ProposedAmount,
+            pr.CurrencyCode,
+            pr.EstimatedDays,
+            pr.Status AS ProposalStatus,
+            p.ClientID,
+            p.Title AS ProjectTitle,
+            p.Status AS ProjectStatus
+        FROM dbo.Proposals AS pr
+        INNER JOIN dbo.Projects AS p ON p.ProjectID = pr.ProjectID
+        WHERE pr.ProposalID = @ProposalID;
+    `,
+
+    UPDATE_PROPOSAL_STATUS: `
+        UPDATE dbo.Proposals
+        SET Status = @Status
+        OUTPUT INSERTED.*
+        WHERE ProposalID = @ProposalID;
+    `,
+
+    
+    ACCEPT_TARGET_PROPOSAL: `
+        UPDATE dbo.Proposals
+        SET Status = N'accepted'
+        WHERE ProposalID = @ProposalID AND Status = N'pending';
+    `,
+
+    REJECT_OTHER_PENDING_PROPOSALS: `
+        UPDATE dbo.Proposals
+        SET Status = N'rejected'
+        WHERE ProjectID = @ProjectID
+          AND ProposalID <> @ProposalID
+          AND Status = N'pending';
+    `,
+
+    INSERT_PROJECT_ASSIGNMENT: `
+        INSERT INTO dbo.ProjectAssignments (
+            ProjectID,
+            FreelancerID,
+            ProposalID,
+            Status
+        )
+        OUTPUT INSERTED.*
+        VALUES (
+            @ProjectID,
+            @FreelancerID,
+            @ProposalID,
+            N'assigned'
+        );
+    `,
+
+    SET_PROJECT_IN_PROGRESS: `
+        UPDATE dbo.Projects
+        SET Status = N'in_progress',
+            UpdatedAt = SYSUTCDATETIME()
+        WHERE ProjectID = @ProjectID;
+    `,
