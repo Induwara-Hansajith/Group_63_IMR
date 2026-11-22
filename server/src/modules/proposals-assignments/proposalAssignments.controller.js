@@ -66,7 +66,7 @@ async function submitProposalHandler(req, res){
     }
 }
 
-async function getMyProposalhandler(req, res){
+async function getMyProposalsHandler(req, res){
     try{
         if (req.user.role !== "freelancer"){
             return res.status(403).json({ error: "Only freelancers can view their proposals." });
@@ -78,7 +78,7 @@ async function getMyProposalhandler(req, res){
     }
 }
 
-async function getProjectProposalHandler(req, res){
+async function getProjectProposalsHandler(req, res){
     try{
         if (req.user.role !== "client" && req.user.role !== "admin"){
             return res.status(403).json({message: "ONly clients or administrators can view project proposals "});
