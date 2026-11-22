@@ -176,3 +176,73 @@ async function acceptProposalHandler(req, res) {
     }
 }
 
+
+async function getMyAssignmentsHandler(req, res){
+    try{
+        const assignments = await service.getMyAssignments({
+            userId: req.user.userid,
+            role: req.user.role,
+        });
+        return res.json({ assignments });
+    }catch(err){
+        return handleError(res, err);
+    }
+}
+
+async function getAssignmentByIdHandler(req, res){
+    try{
+        const assignmentId = parsePositiveInt(req.params.assignmentId);
+        if (!assignmentId){
+            return res.status(400).json({message: "Invalid assignmentId "});
+        }
+
+        const assignment = await service.getAssignmentById({
+            assignmentId,
+            requesterId: req.user.userid,
+            requesterRole: req.user.role,
+        });
+        return res.json({assignment});
+    }catch(err){
+        return handleError(res, err);
+    }
+}
+
+async function updateAssignmentStatusHandler(req, res) {
+    try {
+        const assignmentId = parsePositiveInt(req.params.assignmentId);
+        if (!assignmentId) {
+            return res.status(400).json({ message: "Invalid assignmentId." });
+        }
+
+        const status = typeof req.body.status === "string" ? req.body.status.trim() : "";
+        if (!status) {
+            return res.status(400).json({ message: "New status is required." });
+        }
+
+        const assignment = await service.updateAssignmentStatus({
+            assignmentId,
+            newStatus: status,
+            requesterId: req.user.userid,
+            requesterRole: req.user.role,
+        });
+
+        return res.json({
+            message: `Assignment status updated to '${status}'.`,
+            assignment,
+        });
+    } catch (err) {
+        return handleError(res, err);
+    }
+}
+
+module.exports = {
+    submitProposalHandler,
+    getMyProposalsHandler,
+    getProjectProposalsHandler,
+    withdrawProposalHandler,
+    rejectProposalHandler,
+    acceptProposalHandler,
+    getMyAssignmentsHandler,
+    getAssignmentByIdHandler,
+    updateAssignmentStatusHandler,
+};
