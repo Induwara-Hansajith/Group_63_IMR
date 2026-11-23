@@ -52,8 +52,35 @@ const getProjectById = async (req, res) => {
         });
     }
 };
+const createProject = async (req, res) => {
+    try {
+        const {
+            ClientID,
+            Title,
+            Description,
+            BudgetType,
+            BudgetMin,
+            BudgetMax,
+            CurrencyCode,
+            Deadline,
+            Status
+        } = req.body;
+
+        res.status(201).json({
+            message: "Project created successfully"
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to create project"
+        });
+    }
+};
 
 module.exports = {
     getAllProjects,
     getProjectById
 };
+createProject()
