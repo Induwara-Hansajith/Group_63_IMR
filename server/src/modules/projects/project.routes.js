@@ -4,8 +4,10 @@ const router = express.Router();
 
 const {
     getAllProjects,
-    getProjectById
+    getProjectById,
+    createProject
 } = require("./project.controller");
+
 
 router.get("/", getAllProjects);
 
