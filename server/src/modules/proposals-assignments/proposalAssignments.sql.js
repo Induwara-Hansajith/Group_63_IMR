@@ -133,13 +133,16 @@ const SQL = {
             ProposalID,
             Status
         )
-        OUTPUT INSERTED.*
         VALUES (
             @ProjectID,
             @FreelancerID,
             @ProposalID,
             N'assigned'
         );
+
+        SELECT *
+        FROM dbo.ProjectAssignments
+        WHERE AssignmentID = SCOPE_IDENTITY();
     `,
 
     SET_PROJECT_IN_PROGRESS: `
@@ -212,7 +215,7 @@ const SQL = {
         WHERE a.AssignmentID = @AssignmentID;
     `,
 
-    UPDATE_ASSIGNMENT_STATUS: `
+UPDATE_ASSIGNMENT_STATUS: `
         UPDATE dbo.ProjectAssignments
         SET Status = @NewStatus,
             StartedAt = CASE
@@ -223,7 +226,10 @@ const SQL = {
                 WHEN @NewStatus = N'completed' THEN SYSUTCDATETIME()
                 ELSE CompletedAt
             END
-        OUTPUT INSERTED.*
+        WHERE AssignmentID = @AssignmentID;
+
+        SELECT *
+        FROM dbo.ProjectAssignments
         WHERE AssignmentID = @AssignmentID;
     `,
 
