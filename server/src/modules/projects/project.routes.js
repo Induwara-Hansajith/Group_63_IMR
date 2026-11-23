@@ -13,4 +13,6 @@ router.get("/", getAllProjects);
 
 router.get("/:id", getProjectById);
 
+router.post("/", createProject);
+
 module.exports = router;
