@@ -6,6 +6,47 @@ const requireAuth = require("../middleware/requireAuth");
 
 const router = express.Router();
 
+router.get("/me", requireAuth, async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input("userId", sql.BigInt, req.user.userid)
+      .query(`
+        SELECT
+          u.UserID AS userId,
+          u.Email AS email,
+          u.AccountStatus AS accountStatus,
+          r.RoleName AS role,
+          fp.DisplayName AS displayName,
+          fp.Biography AS biography,
+          fp.ExperienceYears AS experienceYears,
+          fp.HourlyRate AS hourlyRate,
+          fp.CurrencyCode AS currencyCode,
+          fp.AvailabilityStatus AS availabilityStatus,
+          fp.PortfolioURL AS portfolioURL,
+          cp.OrganizationName AS organizationName,
+          cp.ContactName AS contactName,
+          cp.Phone AS phone,
+          cp.WebsiteURL AS websiteURL,
+          cp.BillingAddress AS billingAddress
+        FROM dbo.Users AS u
+        INNER JOIN dbo.Roles AS r ON r.RoleID = u.RoleID
+        LEFT JOIN dbo.FreelancerProfiles AS fp ON fp.UserID = u.UserID
+        LEFT JOIN dbo.ClientProfiles AS cp ON cp.UserID = u.UserID
+        WHERE u.UserID = @userId;
+      `);
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: "Account not found." });
+    }
+
+    return res.json({ user: result.recordset[0] });
+  } catch {
+    return res.status(500).json({ message: "Could not load account." });
+  }
+});
+
 function makeToken(user) {
   return jwt.sign(
     { role: user.role },
