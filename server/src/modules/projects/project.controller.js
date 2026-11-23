@@ -81,6 +81,6 @@ const createProject = async (req, res) => {
 
 module.exports = {
     getAllProjects,
-    getProjectById
+    getProjectById,
+    createProject
 };
-createProject()
