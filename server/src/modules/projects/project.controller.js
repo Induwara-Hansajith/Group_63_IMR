@@ -91,8 +91,48 @@ const createProject = async (req, res) => {
     }
 };
 
+const updateProject = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const {
+            Title,
+            Description,
+            BudgetType,
+            BudgetMin,
+            BudgetMax,
+            CurrencyCode,
+            Deadline,
+            Status
+        } = req.body;
+
+        return res.status(200).json({
+            message: "Project updated successfully",
+            projectId: id,
+            data: {
+                Title,
+                Description,
+                BudgetType,
+                BudgetMin,
+                BudgetMax,
+                CurrencyCode,
+                Deadline,
+                Status
+            }
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to update project"
+        });
+    }
+};
+
 module.exports = {
     getAllProjects,
     getProjectById,
-    createProject
+    createProject,
+    updateProject
 };
