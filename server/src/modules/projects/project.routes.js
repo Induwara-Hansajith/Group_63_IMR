@@ -9,11 +9,14 @@ const {
     updateProject,
     updateProjectStatus,
     getProjectSkills,
-    addProjectSkill
+    addProjectSkill,
+    searchProjects
 } = require("./project.controller");
 
 
 router.get("/", getAllProjects);
+
+router.get("/search", searchProjects);
 
 router.get("/:id", getProjectById);
 
@@ -21,7 +24,7 @@ router.post("/", createProject);
 
 router.put("/:id", updateProject);
 
-router.patch("/:id", updateProjectStatus);
+router.patch("/:id/status", updateProjectStatus);
 
 router.get("/:id/skills", getProjectSkills);
 
