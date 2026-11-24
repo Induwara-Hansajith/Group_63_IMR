@@ -188,6 +188,27 @@ const addProjectSkill = async (req, res) => {
     }
 };
 
+const searchProjects = async (req, res) => {
+    try {
+        const { title, status } = req.query;
+
+        return res.status(200).json({
+            message: "Project search working",
+            filters: {
+                title,
+                status
+            }
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to search projects"
+        });
+    }
+};
+
 module.exports = {
     getAllProjects,
     getProjectById,
@@ -195,5 +216,6 @@ module.exports = {
     updateProject,
     updateProjectStatus,
     getProjectSkills,
-    addProjectSkill
+    addProjectSkill,
+    searchProjects
 };
