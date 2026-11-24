@@ -150,10 +150,50 @@ const updateProjectStatus = async (req, res) => {
     }
 };
 
+const getProjectSkills = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        return res.status(200).json({
+            message: "Project skills retrieved successfully",
+            projectId: id
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to retrieve project skills"
+        });
+    }
+};
+
+const addProjectSkill = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { skillId } = req.body;
+
+        return res.status(201).json({
+            message: "Skill added to project",
+            projectId: id,
+            skillId
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to add project skill"
+        });
+    }
+};
+
 module.exports = {
     getAllProjects,
     getProjectById,
     createProject,
     updateProject,
-    updateProjectStatus
+    updateProjectStatus,
+    getProjectSkills,
+    addProjectSkill
 };
