@@ -6,7 +6,8 @@ const {
     getAllProjects,
     getProjectById,
     createProject,
-    updateProject
+    updateProject,
+    updateProjectStatus
 } = require("./project.controller");
 
 
@@ -17,5 +18,7 @@ router.get("/:id", getProjectById);
 router.post("/", createProject);
 
 router.put("/:id", updateProject);
+
+router.patch("/:id", updateProjectStatus);
 
 module.exports = router;
