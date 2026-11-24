@@ -9,6 +9,31 @@ const SQL = {
         SELECT *
         FROM dbo.Projects
         WHERE ProjectID = @ProjectID;
+    `,
+
+    CREATE_PROJECT: `
+        INSERT INTO dbo.Projects (
+            ClientID,
+            Title,
+            Description,
+            BudgetType,
+            BudgetMin,
+            BudgetMax,
+            CurrencyCode,
+            Deadline,
+            Status
+        )
+        VALUES (
+            @ClientID,
+            @Title,
+            @Description,
+            @BudgetType,
+            @BudgetMin,
+            @BudgetMax,
+            @CurrencyCode,
+            @Deadline,
+            @Status
+        );
     `
 };
 
