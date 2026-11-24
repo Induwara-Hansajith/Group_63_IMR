@@ -130,9 +130,30 @@ const updateProject = async (req, res) => {
     }
 };
 
+const updateProjectStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        return res.status(200).json({
+            message: "Project status updated successfully",
+            projectId: id,
+            status
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to update project status"
+        });
+    }
+};
+
 module.exports = {
     getAllProjects,
     getProjectById,
     createProject,
-    updateProject
+    updateProject,
+    updateProjectStatus
 };
