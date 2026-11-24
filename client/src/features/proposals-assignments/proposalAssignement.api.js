@@ -30,3 +30,35 @@ export function submitProposal({projectId, coverLetter, proposalAmout, currencyC
     });
 }
 
+export function getMyProposals(){
+    return apiRequest("/proposals/my",{method: "GET"});
+}
+
+export function getProjectProposals(projectId){
+    return apiRequest(`/proposals/project/${projectId}`,{method: "GET"});
+}
+
+export function withdrawProposal(proposalId){
+    return apiRequest(`/proposals/${proposalId}`,{method: "PATCH"});
+}
+
+export function rejectProposal(proposalId){
+    return apiRequest(`/proposals/${proposalId}/reject`,{method: "PATCH"});
+}
+
+export function acceptProposal(proposalId){
+    return apiRequest(`/proposals/${proposalId}/accept`,{method: "POST"});
+}
+
+export function getMyAssignments(){
+    return apiRequest("/assignments/my",{method: "GET"});
+}
+
+export function getAssignmentById(assignmentId){
+    return apiRequest(`/assignments/${assignmentId}`,{method: "GET"});
+}
+
+export function updateAssignment(assignmentId, status){
+    return apiRequest(`/assignments/${assignmentId}/status`,
+        {method: "PATCH", body: JSON.stringify({status}),});
+}
