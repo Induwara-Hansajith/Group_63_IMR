@@ -5,7 +5,8 @@ const router = express.Router();
 const {
     getAllProjects,
     getProjectById,
-    createProject
+    createProject,
+    updateProject
 } = require("./project.controller");
 
 
@@ -14,5 +15,7 @@ router.get("/", getAllProjects);
 router.get("/:id", getProjectById);
 
 router.post("/", createProject);
+
+router.put("/:id", updateProject);
 
 module.exports = router;
