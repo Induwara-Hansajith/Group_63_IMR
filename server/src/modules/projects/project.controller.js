@@ -10,12 +10,12 @@ const getAllProjects = async (req, res) => {
             ORDER BY ProjectID DESC
         `);
 
-        res.status(200).json(result.recordset);
+        return res.status(200).json(result.recordset);
 
     } catch (error) {
         console.error(error);
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Failed to retrieve projects"
         });
     }
@@ -42,16 +42,17 @@ const getProjectById = async (req, res) => {
             });
         }
 
-        res.status(200).json(result.recordset[0]);
+        return res.status(200).json(result.recordset[0]);
 
     } catch (error) {
         console.error(error);
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Failed to retrieve project"
         });
     }
 };
+
 const createProject = async (req, res) => {
     try {
         const {
@@ -66,14 +67,25 @@ const createProject = async (req, res) => {
             Status
         } = req.body;
 
-        res.status(201).json({
-            message: "Project created successfully"
+        return res.status(201).json({
+            message: "Project created successfully",
+            data: {
+                ClientID,
+                Title,
+                Description,
+                BudgetType,
+                BudgetMin,
+                BudgetMax,
+                CurrencyCode,
+                Deadline,
+                Status
+            }
         });
 
     } catch (error) {
         console.error(error);
 
-        res.status(500).json({
+        return res.status(500).json({
             message: "Failed to create project"
         });
     }
